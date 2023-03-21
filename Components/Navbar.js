@@ -1,21 +1,30 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {View, Text, TouchableOpacity, TextInput} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-const Navbar = ({mapSelected, searchFunction, mapFunction}) => {
+import {useDispatch} from 'react-redux';
+
+const Navbar = ({mapSelected, mapFunction}) => {
+  const dispatch = useDispatch();
   const mapIcon = mapSelected ? 'list-outline' : 'map-outline';
   return (
     <View style={styles.container}>
-      <View style={{flexDirection: 'row', justifyContent: 'center', padding: 10 }}>
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: 'bold',
-              color: 'black',
-            }}>
-            Home
-          </Text>
+      <View
+        style={{flexDirection: 'row', justifyContent: 'center', padding: 10}}>
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: 'black',
+          }}>
+          Home
+        </Text>
       </View>
-      <View style={{ flexDirection: 'row', alignContent: 'space-around', padding: 5 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignContent: 'space-around',
+          padding: 5,
+        }}>
         <TouchableOpacity
           style={{
             flex: 1,
@@ -23,11 +32,11 @@ const Navbar = ({mapSelected, searchFunction, mapFunction}) => {
             borderColor: '#b3b3b3',
             borderRadius: 5,
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
           }}>
           <Ionicons name="filter-outline" size={30} />
         </TouchableOpacity>
-        <View style={{ flex: 8 }}>
+        <View style={{flex: 8}}>
           <TextInput
             style={{
               elevation: 1,
@@ -39,7 +48,12 @@ const Navbar = ({mapSelected, searchFunction, mapFunction}) => {
               backgroundColor: 'white',
             }}
             placeholder=" Search in your location"
-            onSubmitEditing={(event) => searchFunction(event.nativeEvent.text)}
+            onSubmitEditing={event =>
+              dispatch({
+                type: 'GET_FEATURED_DATA',
+                payload: event.nativeEvent.text,
+              })
+            }
           />
         </View>
         <TouchableOpacity
@@ -50,7 +64,7 @@ const Navbar = ({mapSelected, searchFunction, mapFunction}) => {
             borderColor: '#b3b3b3',
             borderRadius: 5,
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
           }}>
           <Ionicons name={mapIcon} size={30} />
         </TouchableOpacity>

@@ -1,26 +1,21 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {View, Text, Image, TouchableOpacity} from 'react-native';
 import StarRating from 'react-native-star-rating';
 import Icons from 'react-native-vector-icons/Ionicons';
 import getShortDistance from '../hooks/getShortDistance';
-const App = ({item, saveFunction}) => {
+import {useDispatch} from 'react-redux';
+
+const App = ({item}) => {
   const [dist, distUnit] = getShortDistance(Number(item.distance));
-  const [iconName, setIconName] = useState(
-    item.isSaved ? 'bookmark' : 'bookmark-outline',
-  );
-  const [iconColor, setIconColor] = useState(item.isSaved ? 'red' : 'black');
+  const dispatch = useDispatch();
 
   function markSaved() {
-    if (item.isSaved === 0) {
-      setIconName('bookmark');
-      setIconColor('red');
-      item.isSaved = 1;
-      saveFunction(item, 1);
+    if (!item.isSaved) {
+      item.isSaved = true;
+      dispatch({type: 'ADD_TO_SAVED', payload: item});
     } else {
-      setIconName('bookmark-outline');
-      setIconColor('black');
-      item.isSaved = 0;
-      saveFunction(item, 0);
+      item.isSaved = false;
+      dispatch({type: 'REMOVE_FROM_SAVED', payload: item.id});
     }
   }
   return (
@@ -59,11 +54,11 @@ const App = ({item, saveFunction}) => {
               {item.name}
             </Text>
             <View style={{flex: 2}}>
-              <TouchableOpacity onPress={markSaved}>
+              <TouchableOpacity onPress={() => markSaved()}>
                 <Icons
-                  name={iconName}
+                  name={item.isSaved ? 'bookmark' : 'bookmark-outline'}
                   size={24}
-                  color={iconColor}
+                  color={item.isSaved ? 'red' : 'black'}
                   style={{marginTop: 2, marginRight: 5, alignSelf: 'flex-end'}}
                 />
               </TouchableOpacity>

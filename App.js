@@ -1,129 +1,91 @@
 import React, {useState, useEffect} from 'react';
-import { View, KeyboardAvoidingView} from 'react-native';
-import searchHook from './hooks/searchItems';
+import {
+  View,
+  KeyboardAvoidingView,
+  ActivityIndicator,
+  Text,
+} from 'react-native';
+import {Provider} from 'react-redux';
+import store from './saga/store';
 import Navbar from './Components/Navbar';
+import RenderList from './Components/RenderList';
 import CategoryBar from './Components/CategoryBar';
-import MapComponent from './Components/MapComponent';
 import GetLocation from 'react-native-get-location';
-import RenderList from './Components/RenderList'
-import PermissionsHook from "./hooks/PermissionsHook";
+import {useDispatch, useSelector} from 'react-redux';
+import MapComponent from './Components/MapComponent';
+import PermissionsHook from './hooks/PermissionsHook';
 
 const App = () => {
-  const [search, nearbyData, featuredData, clearData] = searchHook();
-  const [requestPermission, isPermitted, locationData] = PermissionsHook();
   const [isMapShown, setIsMapShown] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(0);
-  const [restaurantData, setRestaurantData] = useState({});
-  const [savedData, setSavedData] = useState([]);
-  
-  function ctgFunction(ctgSelected)
-  {
-    if(ctgSelected === 'Nearby')
-    {
-      setSelectedCategory(0);
-      setRestaurantData(nearbyData);
-      console.log('Nearby Selected!');
-    }
-    else if(ctgSelected === 'Featured')
-    {
-      setSelectedCategory(1);
-      setRestaurantData(featuredData);
-      console.log('Featured Selected!');
-    }
-    else if(ctgSelected === 'Saved')
-    {
-      setSelectedCategory(2);
-      setRestaurantData(savedData);
-      console.log('Saved Selected!');
-    }
-  }
-  function saveItem(item, state) {
-    if (state) {
-      savedData.push(item);
-    } else {
-      let newSavedData = savedData.filter((e) => e.id !== item.id);
-      setSavedData(newSavedData);
-    }
-  }
+  const [requestPermission] = PermissionsHook();
+  const isRequesting = useSelector(state => state.networkReducer.requesting);
+  const state = useSelector(state => state.dataReducer);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    console.log('UseEffect called!');
     async function startFunction() {
       await requestPermission();
     }
     startFunction();
   }, []);
 
-  useEffect( () => {
-    console.log("Permission: ", isPermitted)
-    if (isPermitted)
-      search(locationData)
-  }, [isPermitted])
-  
-  useEffect(() => {
+  async function refreshData(category) {
+    if (category === 'NEARBY') {
+      const location = await GetLocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 5000,
+      });
 
-    if(selectedCategory === 0)
-      setRestaurantData(nearbyData)
-    else if(selectedCategory === 1)
-      setRestaurantData(featuredData)
+      let requestData = {
+        latitude: location.latitude,
+        longitude: location.longitude,
+      };
 
-  }, [nearbyData, featuredData]);
+      dispatch({type: 'SET_LOCATION_DATA', payload: requestData});
 
-  function searchNewLocation(location) {
-    setSelectedCategory(3);
-    search({location: location}).then(() => {
-      setSelectedCategory(1);
-    });
-  }
-  function returnData() {
-    let data = [];
-    if(selectedCategory == 0)
-      data = nearbyData;
-    else if(selectedCategory == 1)
-      data = featuredData;
-    else
-      data = savedData;
-    return data;
-  }
-  function showMap() {
-    setIsMapShown((prev) => !prev);
+      dispatch({type: 'SET_CATEGORY', payload: 'NEARBY'});
+
+      dispatch({type: 'GET_NEARBY_DATA'});
+    }
   }
 
-  async function refreshData(category)
-  {
-      clearData(0);
-      setSelectedCategory(0);
-      if(category === 0)
-      {
-        GetLocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 5000,
-        })
-        .then(location => {
-          search({
-            latitude: location.latitude,
-            longitude: location.longitude,
-          }).then(setSelectedCategory(0));
-        })
-      }
-  }
   return (
     <KeyboardAvoidingView style={{flex: 1}}>
-      <Navbar mapSelected={isMapShown} searchFunction={searchNewLocation} mapFunction={showMap} />
-      <CategoryBar
-        selected={selectedCategory}
-        ctgFunction={ctgFunction}
+      <Navbar
+        mapSelected={isMapShown}
+        mapFunction={() => {
+          setIsMapShown(prev => !prev);
+        }}
       />
-      <View style={{flex: 1}}>
-        {isMapShown ? (
-          <MapComponent yelpData={restaurantData} />
-        ) : (
-          <RenderList data={restaurantData} category={selectedCategory} saveItem={saveItem} refreshFn={refreshData}/>
-        )}
+      <CategoryBar />
+      <View style={{flex: 1, justifyContent: 'center'}}>
+        {isRequesting ? (
+          <ActivityIndicator color="blue" size="large" />
+        ) : Object.keys(state.selectedData).length > 0 ? (
+          isMapShown ? (
+            <MapComponent />
+          ) : (
+            <RenderList refreshFn={refreshData} />
+          )
+        ) : state.category === 'FEATURED' ? (
+          <Text style={{alignSelf: 'center'}}>
+            Type in a location and submit!
+          </Text>
+        ) : state.category === 'SAVED' ? (
+          <Text style={{alignSelf: 'center'}}>
+            Oops! Looks like you've not saved any location.
+          </Text>
+        ) : null}
       </View>
     </KeyboardAvoidingView>
   );
 };
 
-
-export default App;
+const AppWrapper = () => {
+  return (
+    <Provider store={store}>
+      <App />
+    </Provider>
+  );
+};
+export default AppWrapper;

@@ -3,6 +3,7 @@ import {View, Text, Dimensions, Image} from 'react-native';
 import Icons from 'react-native-vector-icons/Ionicons';
 
 const {width, height} = Dimensions.get('window');
+
 const LabelItem = ({
   imageURI,
   ratingValue,

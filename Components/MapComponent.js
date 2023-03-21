@@ -1,30 +1,23 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, Dimensions, ScrollView, Animated} from 'react-native';
-import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps';
+import React from 'react';
 import LabelItem from './LabelItem';
+import {useSelector} from 'react-redux';
+import {View, ScrollView} from 'react-native';
+import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps';
 
-const {height, width} = Dimensions.get('window');
-
-const MapComponent = ({yelpData}) => {
+const MapComponent = () => {
+  const yelpData = useSelector(state => state.dataReducer.selectedData);
   let key = 0,
-    currentX = 0,
     currentIndex = 0,
     mapObj,
     markerRefs = new Array(20),
     markerIndex = 0;
-  const [scrollXValue, setScrollXValue] = useState(new Animated.Value(0));
-  useEffect(() => console.log(scrollXValue), [scrollXValue]);
-  yelpData.map((element) => console.log(element.hasOwnProperty('price')));
-  function handleScroll(event: Object) {
-    var newX = event.nativeEvent.contentOffset.x;
-    console.log(newX, currentX, newX > currentX);
-    if (newX > currentX) {
-      currentIndex++;
-    } else if (newX < currentX) {
-      currentIndex--;
-    } else {
-      return;
-    }
+
+  function handleScroll(event) {
+    const {contentOffset} = event.nativeEvent;
+    currentIndex = Math.round(
+      contentOffset.x / event.nativeEvent.layoutMeasurement.width,
+    );
+
     mapObj.animateToRegion(
       {
         latitude: yelpData[currentIndex].coordinates.latitude,
@@ -35,13 +28,12 @@ const MapComponent = ({yelpData}) => {
       1000,
     );
     markerRefs[currentIndex].showCallout();
-    markerRefs[currentIndex].pinColor = 'green';
-    currentX = newX;
   }
+
   return (
     <View style={{flex: 1}}>
       <MapView
-        ref={(ref) => (mapObj = ref)}
+        ref={ref => (mapObj = ref)}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={{
@@ -50,9 +42,9 @@ const MapComponent = ({yelpData}) => {
           latitudeDelta: 0.026,
           longitudeDelta: 0.005,
         }}>
-        {yelpData.map((element) => (
+        {yelpData.map(element => (
           <Marker
-            ref={(ref) => (markerRefs[markerIndex++] = ref)}
+            ref={ref => (markerRefs[markerIndex++] = ref)}
             coordinate={element.coordinates}
             key={++key}
             title={element.name}
@@ -70,7 +62,7 @@ const MapComponent = ({yelpData}) => {
             flex: 1,
             backgroundColor: 'transparent',
           }}>
-          {yelpData.map((element) => (
+          {yelpData.map(element => (
             <LabelItem
               key={++key}
               imageURI={element.image_url}

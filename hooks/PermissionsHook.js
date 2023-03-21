@@ -1,15 +1,13 @@
-import React, {useState} from 'react';
 import {PermissionsAndroid} from 'react-native';
 import GetLocation from 'react-native-get-location';
+import {useDispatch} from 'react-redux';
 
 const PermissionsHook = () => {
-  const [isPermitted, setPermitted] = useState(false);
-  const [locationData, setLocationData] = useState({});
-  const [errorMessage, setErrorMessage] = useState('');
+  const dispatch = useDispatch();
 
   const requestPermission = async () => {
     try {
-      const granted = await PermissionsAndroid.request(
+      const permissionResult = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
         {
           title: 'Need Location Permission',
@@ -19,29 +17,34 @@ const PermissionsHook = () => {
           buttonPositive: 'OK',
         },
       );
-      console.log('........................');
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        console.log('Permission Acquired!');
+
+      if (permissionResult === PermissionsAndroid.RESULTS.GRANTED) {
+        dispatch({type: 'SET_PERMISSION_STATE', payload: true});
+        console.log('Location Permission Acquired!');
+
         const location = await GetLocation.getCurrentPosition({
           enableHighAccuracy: true,
           timeout: 5000,
         });
-        console.log(location);
+
         let requestData = {
           latitude: location.latitude,
           longitude: location.longitude,
         };
-        console.log(requestData);
-        setLocationData(requestData);
-        setPermitted(true);
+
+        dispatch({type: 'SET_LOCATION_DATA', payload: requestData});
+
+        dispatch({type: 'SET_CATEGORY', payload: 'NEARBY'});
+
+        dispatch({type: 'GET_NEARBY_DATA'});
       } else {
-        console.log('Location permission denied');
+        console.log('PermissionsHook.js: Location permission denied');
       }
     } catch (err) {
       console.warn(err);
     }
   };
-  return [requestPermission, isPermitted, locationData, errorMessage];
+  return [requestPermission];
 };
 
 export default PermissionsHook;
