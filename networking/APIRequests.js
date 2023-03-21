@@ -1,4 +1,4 @@
-import apiHandler from './APIHandler';
+import apiHandler from './apiHandler';
 export async function getData(requestData, category) {
   params = {term: 'restaurants'};
 
